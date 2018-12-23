@@ -1,0 +1,178 @@
+
+<html>
+<head>
+<meta charset="UTF-8">
+
+<script src="https://cdn.scattercdn.com/file/scatter-cdn/js/latest/scatterjs-core.min.js"></script>
+
+<script src="https://cdn.scattercdn.com/file/scatter-cdn/js/latest/scatterjs-plugin-eosjs.min.js"></script>
+
+ 
+ <script src="https://cdn.jsdelivr.net/npm/eosjs@16.0.6/lib/eos.min.js"
+    integrity="sha512-IS9vyI+sMK7MYNJgHj9G8Li21QYs59sRW/Nyzi+dKUh6bF6OfpOnvzSCTiegWftY1ozOmmyacCH2QIJpZgbuKw=="
+    crossorigin="anonymous">
+   </script>
+ 
+ 
+    
+</head>
+
+<body>
+Mini-Scatter Test (no-nodejs, <strong>pure javascript!</strong>)<br>
+(Worked/tested with Scatter Desktop v10.0.3, Chrome, Safari and Firefox)<br>
+<br>
+<div id='theoutput'>waiting for login...</div> 
+
+
+<script type="text/javascript"> 
+console.log("Start");
+const scatterNetwork = 
+         {
+          blockchain:'eos',
+           //https://eos.greymass.com:443
+           // host:'mainnet.eoscanada.com',
+           host:'eos.greymass.com',          
+          port:443,
+          protocol:'https',
+          chainId:'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906'
+        };
+         
+var eosobject       = null;            
+var scatter_account = null;
+ 
+            
+ScatterJS.plugins( new ScatterEOS() );
+scatter = ScatterJS.scatter;
+window.ScatterJS = null;
+  
+scatter.connect("Put_Your_App_Name_Here").then(function(connected)
+{
+if(!connected) 
+  {
+  console.log("Error");
+  return false;
+  }
+  
+console.log("Connected");
+var v = scatter.getVersion();
+ 
+	scatter.getVersion().then
+	(
+	function (value) 
+	{
+	console.log("Version: " );
+	console.log(value);
+	});
+	
+  // Request scatter identity
+        scatter.getIdentity({accounts:[scatterNetwork]})        
+         .then(identity => {
+            scatter_account = identity.accounts[0].name;
+           var authority = identity.accounts[0].authority;
+           
+           console.log("Ident: ");
+           console.log(identity);
+          
+          console.log("Using scatter account 2: "+scatter_account);  
+          console.log("authority: "+authority);  
+        
+         
+          document.getElementById('theoutput').innerHTML = "Name " + scatter_account;
+      
+      
+       const eosOptions = { expireInSeconds:60 };
+ 
+        
+      console.log("check 1 ");  
+      eosobject = scatter.eos( scatterNetwork, Eos, eosOptions); // Currently not working in this configuration
+ 
+      console.log(eosobject);
+      console.log("check 2 "); 
+        
+        
+        
+        // ---- Request with eosobject 
+        
+        eosobject.getAccount( scatter_account ).then
+        (
+        
+        function (value) 
+                {          
+               
+                if (value == null) return;
+                console.log(value);                
+  
+               var cpu_available = value.cpu_limit.available;
+               console.log("cpu_available: "+cpu_available); // THIS is the final output
+               
+                document.getElementById('theoutput').innerHTML = "Name " + scatter_account+ " CPU:" + cpu_available;
+               }  
+         );
+         
+         
+        // ---- end of request with eosobject
+        
+        } )         
+         .catch(err => {
+          if (err.type == "locked") {
+            alert("Scatter locked. Please refresh page after unlocking Scatter."); 
+          }
+        }
+        );  // scatter.getIdentity
+     
+ 
+}); // connect 
+ 
+ 
+ 
+ 
+// ///////////////////////////
+// dotransaction
+// ///////////////////////////
+function dotransfer()
+{
+
+receiver_account = 'coindonation';
+amount = "0.1000 EOS";
+memo   = "A small donation for your work!";
+
+ // Transfer funds
+  eosobject.transaction({
+    actions: [{
+      account: 'eosio.token',
+      name: 'transfer',
+      authorization: [{actor:scatter_account,permission:"active"}],
+     data: {"from":scatter_account,"to":receiver_account,"quantity":amount,"memo":memo}
+    }]
+  })
+    .then( result => {
+    // Buy Success
+    console.log("Success!!!");   
+    alert("Success!");
+    
+    return;
+  })
+    .catch( error => {
+    console.log("jsonerr: "+error);
+    
+    err = JSON.parse(error);
+    console.log("Error Transaction " + err);  
+    alert('Error' + err.error.name );  
+    return;         
+
+  });
+ 
+
+
+} // function dotransfer()
+ 
+ 
+</script>
+<br>
+<div onclick='dotransfer()' style='border:1px solid;text-align:center;width:500px;cursor:pointer'> Click here send 0.1 EOS from your account to an other account</div><br>
+
+
+
+
+</body>
+</html>
